@@ -4,6 +4,7 @@
 # but may also accpet additional required or optional keyword arguments, as
 # needed.
 import event_model
+import h5py
 from pathlib import Path
 import suitcase.utils
 from ._version import get_versions
@@ -141,7 +142,7 @@ class Serializer(event_model.DocumentRouter):
         # handles/buffers. For a Serializer that only needs *one* file
         # this may be:
         #
-        # self._output_file = None
+        self._output_file = None 
         #
         # For a Serializer that writes a separate file per stream:
         #
@@ -210,8 +211,12 @@ class Serializer(event_model.DocumentRouter):
         # Fill in the file_prefix with the contents of the RunStart document.
         # As in, '{uid}' -> 'c1790369-e4b2-46c7-a294-7abfa239691a'
         # or 'my-data-from-{plan-name}' -> 'my-data-from-scan'
+
         self._templated_file_prefix = self._file_prefix.format(**doc)
-        ...
+        
+        filename = f'{self._templated_file_prefix}.h5'
+        file = self._manager.open('stream_data', filename, 'xb')
+        self._output_file = h5py.File(file)
 
     def descriptor(self, doc):
         ...
