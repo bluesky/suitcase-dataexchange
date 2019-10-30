@@ -1,0 +1,4 @@
+[run]
+branch = true
+include = suitcase/dataexchange/*
+omit = suitcase/dataexchange/_version.py
