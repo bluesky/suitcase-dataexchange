@@ -146,7 +146,7 @@ class Serializer(event_model.DocumentRouter):
         # handles/buffers. For a Serializer that only needs *one* file
         # this may be:
         #
-        self._output_file = None 
+        self._output_file = None
         self._descriptor_uids = {}
         self._baseline_added = False
         self._stream_count = defaultdict(lambda: 0)
@@ -223,7 +223,7 @@ class Serializer(event_model.DocumentRouter):
         # or 'my-data-from-{plan-name}' -> 'my-data-from-scan'
 
         self._templated_file_prefix = self._file_prefix.format(**doc)
-        
+
         filename = f'{self._templated_file_prefix}.h5'
         file = self._manager.open('stream_data', filename, 'xb')
         self._output_file = h5py.File(file)
@@ -236,32 +236,38 @@ class Serializer(event_model.DocumentRouter):
         # self._output_file.create_dataset('scan_id', data = doc['scan_id'])
         # self._output_file.create_dataset('scan_time', data = doc['scan_time'])
         # self._output_file.create_dataset('X_eng', data = x_eng)
-        
-    
+
+
     def descriptor(self, doc):
+
         if doc['name'] == 'baseline':
             self._descriptor_uids['baseline'] = doc['uid']
-        
+
         elif doc['name'] == 'primary':
             self._descriptor_uids['primary'] = doc['uid']
-            self._img_shape = doc['data_keys']['Andor_image']['shape'][:2]
-            self._output_file.create_dataset('/exchange/data_white', 
-                                             shape = self._img_shape, data = None)
+            self._img_shape = (doc['data_keys']['Andor_image']['shape'][1],
+                               doc['data_keys']['Andor_image']['shape'][0])
+            self._output_file.create_dataset('/exchange/data_white',
+                                             shape = self._img_shape,
+                                             data = None)
             self._output_file.create_dataset('/exchange/data_dark',
-                                             shape = self._img_shape, data = None)
+                                             shape = self._img_shape,
+                                             data = None)
             self._output_file.create_dataset('/exchange/data',
                                              maxshape=(None, *self._img_shape),
                                              chunks=(5, *self._img_shape),
                                              shape=(0, *self._img_shape), data = None)
         elif doc['name'] == "zps_pi_r_monitor":
             self._descriptor_uids['zps_pi_r_monitor'] = doc['uid']
-            self._output_file.create_dataset('/exchange/theta', 
+            self._output_file.create_dataset('/exchange/theta',
                                              maxshape=(None,),
                                              chunks=(1500,),
                                              shape = (0,), data = None)
             #self._output_file.create_dataset('img_bkg_avg', data = None)
-            #self._output_file.create_dataset('img_dark_avg', data = np.array(img_dark_avg, dtype=np.float32))
-            #self._output_file.create_dataset('img_tomo', data = np.array(img_tomo, dtype=np.int16))
+            #self._output_file.create_dataset('img_dark_avg',
+            #          data = np.array(img_dark_avg, dtype=np.float32))
+            #self._output_file.create_dataset('img_tomo',
+            #          data = np.array(img_tomo, dtype=np.int16))
             #self._output_file.create_dataset('angle', data = img_angle)
 
 
@@ -276,15 +282,15 @@ class Serializer(event_model.DocumentRouter):
             x_pos =  doc['data']['zps_sx'][0]
             y_pos =  doc['data']['zps_sy'][0]
             z_pos =  doc['data']['zps_sz'][0]
-            r_pos =  doc['data']['zps_pi_r'][0] 
+            r_pos =  doc['data']['zps_pi_r'][0]
             self._output_file.create_dataset('x_ini', data = x_pos)
             self._output_file.create_dataset('y_ini', data = y_pos)
             self._output_file.create_dataset('z_ini', data = z_pos)
             self._output_file.create_dataset('r_ini', data = r_pos)
             self._baseline_added = True
-        
+
         elif doc['descriptor'] == self._descriptor_uids.get('primary'):
-            
+
     #pos = h.table('zps_pi_r_monitor')
     #imgs = np.array(list(h.data('Andor_image')))
     #img_dark = imgs[0]
@@ -292,9 +298,9 @@ class Serializer(event_model.DocumentRouter):
     #s = img_dark.shape
     #img_dark_avg = np.mean(img_dark, axis=0).reshape(1, s[1], s[2])
     #img_bkg_avg = np.mean(img_bkg, axis=0).reshape(1, s[1], s[2])
-    
+
             #self._output_file['/exchange/data_white'][:] = None
-            
+
             if self._stream_count[doc['descriptor']] == 1:
                 dark_avg = np.mean(doc['data']['Andor_image'][0], axis=0, keepdims=True)
                 self._output_file['/exchange/data_dark'][:] = dark_avg
@@ -302,10 +308,10 @@ class Serializer(event_model.DocumentRouter):
             else:
                 start_from = 0
             dataset = self._output_file['/exchange/data']
-            for timestamps, image in doc['data']['Andor_image'][start_from:]:
-                dataset.resize((dataset.shape[0]+self._chunk_size, *dataset.shape[1:]))
+            for image in doc['data']['Andor_image'][start_from:]:
+                dataset.resize((dataset.shape[0] + self._chunk_size, *dataset.shape[1:]))
                 dataset[-self._chunk_size:,:,:] = image
-                self._image_timestamps.extend(timestamps)
+            self._image_timestamps.extend(doc['timestamps']['Andor_image'][start_from:])
 
         elif doc['descriptor'] == self._descriptor_uids.get('zps_pi_r_monitor'):
             self._buffered_thetas.extend(doc['data']['zps_pi_r'])
