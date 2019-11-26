@@ -89,7 +89,7 @@ def export(gen, directory, file_prefix='{uid}-', **kwargs):
 
 class Serializer(event_model.DocumentRouter):
     """
-    Serialize a stream of documents to dataexchange.
+    Serialize a stream of documents to hdf5 for tomviz dataexchange.
 
     .. note::
 
@@ -224,8 +224,8 @@ class Serializer(event_model.DocumentRouter):
 
         self._templated_file_prefix = self._file_prefix.format(**doc)
 
-        filename = f'{self._templated_file_prefix}.h5'
-        file = self._manager.open('stream_data', filename, 'xb')
+        self._filename = f'{self._templated_file_prefix}.h5'
+        file = self._manager.open('stream_data', self._filename, 'xb')
         self._output_file = h5py.File(file)
 
         # x_eng = doc.get('XEng', doc['x_ray_energy'])
@@ -318,6 +318,7 @@ class Serializer(event_model.DocumentRouter):
             self._theta_timestamps.extend(doc['timestamps']['zps_pi_r'])
 
     def stop(self, doc):
+        print('STOP')
         # Pop off the white frame (the last frame written)
         dataset = self._output_file['/exchange/data']
         white_image = dataset[-self._chunk_size:,:,:]
@@ -334,7 +335,7 @@ class Serializer(event_model.DocumentRouter):
             self._buffered_theta)
 
         self._output_file.create_dataset('/exchange/theta', data=theta)
-
+        return
 
 class MVPHandler(HandlerBase):
     def __init__(self, filename, frame_per_point=1):
