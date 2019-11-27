@@ -83,8 +83,7 @@ def export(gen, directory, file_prefix='{uid}-', **kwargs):
     with Serializer(directory, file_prefix, **kwargs) as serializer:
         for item in gen:
             serializer(*item)
-
-    return serializer.artifacts
+        return serializer.artifacts
 
 
 class Serializer(event_model.DocumentRouter):
@@ -137,7 +136,8 @@ class Serializer(event_model.DocumentRouter):
         if isinstance(directory, (str, Path)):
             # The user has given us a filepath; they want files.
             # Set up a MultiFileManager for them.
-            self._manager = suitcase.utils.MultiFileManager(directory)
+            self._manager = suitcase.utils.MultiFileManager(directory,
+                                          allowed_modes=('x', 'xt', 'xb', 'xb+'))
         else:
             # The user has given us their own Manager instance. Use that.
             self._manager = directory
@@ -153,6 +153,7 @@ class Serializer(event_model.DocumentRouter):
         self._buffered_thetas = []
         self._theta_timestamps = []
         self._image_timestamps= []
+        self._stashed_event = None
         #
         # For a Serializer that writes a separate file per stream:
         #
@@ -225,17 +226,11 @@ class Serializer(event_model.DocumentRouter):
         self._templated_file_prefix = self._file_prefix.format(**doc)
 
         self._filename = f'{self._templated_file_prefix}.h5'
-        file = self._manager.open('stream_data', self._filename, 'xb')
+        file = self._manager.open('stream_data', self._filename, 'xb+')
         self._output_file = h5py.File(file)
 
         # x_eng = doc.get('XEng', doc['x_ray_energy'])
         self._chunk_size = doc['chunk_size']
-
-        # self._output_file.create_dataset('note', data = doc['note'])
-        # self._output_file.create_dataset('uid', data = doc['uid'])
-        # self._output_file.create_dataset('scan_id', data = doc['scan_id'])
-        # self._output_file.create_dataset('scan_time', data = doc['scan_time'])
-        # self._output_file.create_dataset('X_eng', data = x_eng)
 
 
     def descriptor(self, doc):
@@ -263,12 +258,6 @@ class Serializer(event_model.DocumentRouter):
                                              maxshape=(None,),
                                              chunks=(1500,),
                                              shape = (0,), data = None)
-            #self._output_file.create_dataset('img_bkg_avg', data = None)
-            #self._output_file.create_dataset('img_dark_avg',
-            #          data = np.array(img_dark_avg, dtype=np.float32))
-            #self._output_file.create_dataset('img_tomo',
-            #          data = np.array(img_tomo, dtype=np.int16))
-            #self._output_file.create_dataset('angle', data = img_angle)
 
 
     def event_page(self, doc):
@@ -291,16 +280,6 @@ class Serializer(event_model.DocumentRouter):
 
         elif doc['descriptor'] == self._descriptor_uids.get('primary'):
 
-    #pos = h.table('zps_pi_r_monitor')
-    #imgs = np.array(list(h.data('Andor_image')))
-    #img_dark = imgs[0]
-    #img_bkg = imgs[-1]
-    #s = img_dark.shape
-    #img_dark_avg = np.mean(img_dark, axis=0).reshape(1, s[1], s[2])
-    #img_bkg_avg = np.mean(img_bkg, axis=0).reshape(1, s[1], s[2])
-
-            #self._output_file['/exchange/data_white'][:] = None
-
             if self._stream_count[doc['descriptor']] == 1:
                 dark_avg = np.mean(doc['data']['Andor_image'][0], axis=0, keepdims=True)
                 self._output_file['/exchange/data_dark'][:] = dark_avg
@@ -317,8 +296,8 @@ class Serializer(event_model.DocumentRouter):
             self._buffered_thetas.extend(doc['data']['zps_pi_r'])
             self._theta_timestamps.extend(doc['timestamps']['zps_pi_r'])
 
+
     def stop(self, doc):
-        print('STOP')
         # Pop off the white frame (the last frame written)
         dataset = self._output_file['/exchange/data']
         white_image = dataset[-self._chunk_size:,:,:]
@@ -327,15 +306,16 @@ class Serializer(event_model.DocumentRouter):
         # and the junk frame (second to last). It is a junk frame because the
         # motor stopped moving somewhere in the middle.
         dataset.resize((dataset.shape[0] - 2 * self._chunk_size, *dataset.shape[1:]))
+
         del self._image_timestamps[-2 * self._chunk_size:]
 
         theta = np.interp(
             self._image_timestamps,
             self._theta_timestamps,
-            self._buffered_theta)
+            self._buffered_thetas)
 
-        self._output_file.create_dataset('/exchange/theta', data=theta)
-        return
+        print("DONE")
+        #self._output_file.create_dataset('/exchange/theta', data=theta)
 
 class MVPHandler(HandlerBase):
     def __init__(self, filename, frame_per_point=1):
