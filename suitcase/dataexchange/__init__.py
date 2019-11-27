@@ -176,7 +176,7 @@ class Serializer(event_model.DocumentRouter):
         """
         Close all of the resources (e.g. files) allocated.
         """
-        self._manager.close()
+        #self._manager.close()
 
     # These methods enable the Serializer to be used as a context manager:
     #
@@ -254,10 +254,10 @@ class Serializer(event_model.DocumentRouter):
                                              shape=(0, *self._img_shape), data = None)
         elif doc['name'] == "zps_pi_r_monitor":
             self._descriptor_uids['zps_pi_r_monitor'] = doc['uid']
-            self._output_file.create_dataset('/exchange/theta',
-                                             maxshape=(None,),
-                                             chunks=(1500,),
-                                             shape = (0,), data = None)
+            #self._output_file.create_dataset('/exchange/theta',
+            #                                 maxshape=(None,),
+            #                                 chunks=(1500,),
+            #                                 shape = (0,), data = None)
 
 
     def event_page(self, doc):
@@ -314,8 +314,8 @@ class Serializer(event_model.DocumentRouter):
             self._theta_timestamps,
             self._buffered_thetas)
 
+        self._output_file.create_dataset('/exchange/theta', data=theta)
         print("DONE")
-        #self._output_file.create_dataset('/exchange/theta', data=theta)
 
 class MVPHandler(HandlerBase):
     def __init__(self, filename, frame_per_point=1):
