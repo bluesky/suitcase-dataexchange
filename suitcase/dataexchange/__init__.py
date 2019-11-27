@@ -142,10 +142,6 @@ class Serializer(event_model.DocumentRouter):
             # The user has given us their own Manager instance. Use that.
             self._manager = directory
 
-        # Finally, we usually need some state related to stashing file
-        # handles/buffers. For a Serializer that only needs *one* file
-        # this may be:
-        #
         self._output_file = None
         self._descriptor_uids = {}
         self._baseline_added = False
@@ -154,10 +150,6 @@ class Serializer(event_model.DocumentRouter):
         self._theta_timestamps = []
         self._image_timestamps= []
         self._stashed_event = None
-        #
-        # For a Serializer that writes a separate file per stream:
-        #
-        # self._files = {}
 
     @property
     def artifacts(self):
@@ -178,45 +170,11 @@ class Serializer(event_model.DocumentRouter):
         """
         #self._manager.close()
 
-    # These methods enable the Serializer to be used as a context manager:
-    #
-    # with Serializer(...) as serializer:
-    #     ...
-    #
-    # which always calls close() on exit from the with block.
-
     def __enter__(self):
         return self
 
     def __exit__(self, *exception_details):
         self.close()
-
-    # Each of the methods below corresponds to a document type. As
-    # documents flow in through Serializer.__call__, the DocumentRouter base
-    # class will forward them to the method with the name corresponding to
-    # the document's type: RunStart documents go to the 'start' method,
-    # etc.
-    #
-    # In each of these methods:
-    #
-    # - If needed, obtain a new file/buffer from the manager and stash it
-    #   on instance state (self._files, etc.) if you will need it again
-    #   later. Example:
-    #
-    #   filename = f'{self._templated_file_prefix}-primary.csv'
-    #   file = self._manager.open('stream_data', filename, 'xt')
-    #   self._files['primary'] = file
-    #
-    #   See the manager documentation below for more about the arguments to open().
-    #
-    # - Write data into the file, usually something like:
-    #
-    #   content = my_function(doc)
-    #   file.write(content)
-    #
-    #   or
-    #
-    #   my_function(doc, file)
 
     def start(self, doc):
         # Fill in the file_prefix with the contents of the RunStart document.
@@ -234,7 +192,6 @@ class Serializer(event_model.DocumentRouter):
 
 
     def descriptor(self, doc):
-
         if doc['name'] == 'baseline':
             self._descriptor_uids['baseline'] = doc['uid']
 
@@ -254,10 +211,6 @@ class Serializer(event_model.DocumentRouter):
                                              shape=(0, *self._img_shape), data = None)
         elif doc['name'] == "zps_pi_r_monitor":
             self._descriptor_uids['zps_pi_r_monitor'] = doc['uid']
-            #self._output_file.create_dataset('/exchange/theta',
-            #                                 maxshape=(None,),
-            #                                 chunks=(1500,),
-            #                                 shape = (0,), data = None)
 
 
     def event_page(self, doc):
