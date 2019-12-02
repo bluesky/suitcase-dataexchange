@@ -48,14 +48,11 @@ class Migration(event_model.DocumentRouter):
             datum_id = data[self.image_field]
             new_datum_id = self.new_datum_ids[datum_id]
             data[self.timestamp_field] = new_datum_id
+            if 'filled' in doc:
+                doc['filled'][self.timestamp_field] = False
 
     def event_page(self, doc):
-        # Mutate doc in place to add a column for timestamps.
-        data = doc['data']
-        if self.image_field in data:
-            for i, datum_id in enumerate(data[self.image_field]):
-                new_datum_id = self.new_datum_ids[datum_id]
-                data[self.timestamp_field] = new_datum_id
+        raise NotImplementedError
 
     def __call__(self, name, doc):
         # Give the methods above the opportunity the mutate the document before
