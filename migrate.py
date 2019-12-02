@@ -40,6 +40,7 @@ class Migration(event_model.DocumentRouter):
             new_datum_id = f'{new_res_uid}/{i}'
             datum_page_copy['datum_id'][i] = new_datum_id
             self.new_datum_ids[datum_id] = new_datum_id
+        datum_page_copy['resource'] = new_res_uid
         self.serializer('datum_page', datum_page_copy)
 
     def event(self, doc):
