@@ -183,7 +183,7 @@ class Serializer(event_model.DocumentRouter):
 
         self._filename = f'{self._templated_file_prefix}.h5'
         file = self._manager.open('stream_data', self._filename, 'xb+')
-        self._output_file = h5py.File(file)
+        self._output_file = h5py.File(file, 'w')
 
         # x_eng = doc.get('XEng', doc['x_ray_energy'])
         self._chunk_size = doc['chunk_size']
