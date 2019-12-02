@@ -241,7 +241,8 @@ class Serializer(event_model.DocumentRouter):
             for image in doc['data']['Andor_image'][start_from:]:
                 dataset.resize((dataset.shape[0] + self._chunk_size, *dataset.shape[1:]))
                 dataset[-self._chunk_size:,:,:] = image
-            self._image_timestamps.extend(doc['data']['Andor_timestamp'][start_from:])
+            for ts in doc['data']['Andor_timestamp'][start_from:]:
+                self._image_timestamps.extend(ts)
 
         elif doc['descriptor'] == self._descriptor_uids.get('zps_pi_r_monitor'):
             self._buffered_thetas.extend(doc['data']['zps_pi_r'])
