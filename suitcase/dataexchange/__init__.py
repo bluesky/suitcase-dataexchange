@@ -10,8 +10,6 @@ from pathlib import Path
 import suitcase.utils
 from ._version import get_versions
 from collections import defaultdict
-from area_detector_handlers.handlers import (
-    AreaDetectorHDF5TimestampHandler, AreaDetectorHDF5Handler, HandlerBase)
 
 __version__ = get_versions()['version']
 del get_versions
@@ -234,7 +232,7 @@ class Serializer(event_model.DocumentRouter):
         elif doc['descriptor'] == self._descriptor_uids.get('primary'):
 
             if self._stream_count[doc['descriptor']] == 1:
-                dark_avg = np.mean(doc['data']['Andor_image'][0], axis=0, keepdims=True)
+                dark_avg = np.mean(doc['data']['Andor_image'], axis=0, keepdims=True)
                 self._output_file['/exchange/data_dark'][:] = dark_avg
                 start_from = 1
             else:
@@ -243,7 +241,7 @@ class Serializer(event_model.DocumentRouter):
             for image in doc['data']['Andor_image'][start_from:]:
                 dataset.resize((dataset.shape[0] + self._chunk_size, *dataset.shape[1:]))
                 dataset[-self._chunk_size:,:,:] = image
-            self._image_timestamps.extend(doc['timestamps']['Andor_image'][start_from:])
+            self._image_timestamps.extend(doc['data']['Andor_timestamp'][start_from:])
 
         elif doc['descriptor'] == self._descriptor_uids.get('zps_pi_r_monitor'):
             self._buffered_thetas.extend(doc['data']['zps_pi_r'])
@@ -269,14 +267,3 @@ class Serializer(event_model.DocumentRouter):
 
         self._output_file.create_dataset('/exchange/theta', data=theta)
         print("DONE")
-
-class MVPHandler(HandlerBase):
-    def __init__(self, filename, frame_per_point=1):
-        self.image_handler = AreaDetectorHDF5Handler(
-            filename, frame_per_point=frame_per_point)
-        self.timestamp_handler = AreaDetectorHDF5TimestampHandler(
-            filename, frame_per_point=frame_per_point)
-
-    def __call__(self, point_number):
-        return (self.timestamp_handler(point_number),
-                self.image_handler(point_number))
