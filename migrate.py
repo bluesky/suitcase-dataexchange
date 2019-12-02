@@ -11,6 +11,15 @@ class Migration(event_model.DocumentRouter):
         self.new_res_uids = {}
         self.new_datum_ids = {}
 
+    def descriptor(self, doc):
+        # Add a data key for the timestamp.
+        try:
+            data_key = doc['data_keys'][self.image_field].copy()
+        except KeyError:
+            return
+        data_key['shape'] = data_key['shape'][:1]
+        doc['data_keys'][self.timestamp_field] = data_key
+
     def resource(self, doc):
         assert 'uid' in doc
         resource_copy = doc.copy()
@@ -37,8 +46,11 @@ class Migration(event_model.DocumentRouter):
                 data[self.timestamp_field] = new_datum_id
 
     def __call__(self, name, doc):
-        self.serializer(name, doc)
+        # Give the methods above the opportunity the mutate the document before
+        # it is serialize. Note that some make a *copy* and serialize that as
+        # well.
         super().__call__(name, doc)
+        self.serializer(name, doc)
 
 
 if __name__ == '__main__':
