@@ -267,4 +267,3 @@ class Serializer(event_model.DocumentRouter):
             self._buffered_thetas)
 
         self._output_file.create_dataset('/exchange/theta', data=theta)
-        print("DONE")
