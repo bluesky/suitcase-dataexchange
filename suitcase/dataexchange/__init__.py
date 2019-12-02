@@ -232,7 +232,7 @@ class Serializer(event_model.DocumentRouter):
         elif doc['descriptor'] == self._descriptor_uids.get('primary'):
 
             if self._stream_count[doc['descriptor']] == 1:
-                dark_avg = np.mean(doc['data']['Andor_image'], axis=0, keepdims=True)
+                dark_avg = np.mean(doc['data']['Andor_image'][0], axis=0, keepdims=True)
                 self._output_file['/exchange/data_dark'][:] = dark_avg
                 start_from = 1
             else:
