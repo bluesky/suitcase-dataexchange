@@ -15,7 +15,7 @@ __version__ = get_versions()['version']
 del get_versions
 
 
-def export(gen, directory, file_prefix='{uid}-', **kwargs):
+def export(gen, directory, file_prefix='{uid}', **kwargs):
     """
     Export a stream of documents to dataexchange.
 
@@ -125,7 +125,7 @@ class Serializer(event_model.DocumentRouter):
         dict mapping the 'labels' to lists of file names (or, in general,
         whatever resources are produced by the Manager)
     """
-    def __init__(self, directory, file_prefix='{uid}-', **kwargs):
+    def __init__(self, directory, file_prefix='{uid}', **kwargs):
 
         self._file_prefix = file_prefix
         self._kwargs = kwargs
