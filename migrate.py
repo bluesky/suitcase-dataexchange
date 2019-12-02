@@ -1,5 +1,7 @@
-import event_model
+import copy
 import uuid
+
+import event_model
 
 
 class Migration(event_model.DocumentRouter):
@@ -12,7 +14,7 @@ class Migration(event_model.DocumentRouter):
         self.new_datum_ids = {}
 
     def descriptor(self, doc):
-        # Add a data key for the timestamp.
+        # Mutate in palce to add a data key for the timestamp.
         try:
             data_key = doc['data_keys'][self.image_field].copy()
         except KeyError:
@@ -21,6 +23,7 @@ class Migration(event_model.DocumentRouter):
         doc['data_keys'][self.timestamp_field] = data_key
 
     def resource(self, doc):
+        # Make a second resource and serialize it. Do not mutate original.
         assert 'uid' in doc
         resource_copy = doc.copy()
         new_res_uid = str(uuid.uuid4())
@@ -30,7 +33,8 @@ class Migration(event_model.DocumentRouter):
         self.serializer('resource', resource_copy)
 
     def datum_page(self, doc):
-        datum_page_copy = doc.copy()
+        # Make a second datum_page and serialize it. Do not mutate original.
+        datum_page_copy = copy.deepcopy(doc)
         new_res_uid = self.new_res_uids[doc['resource']]
         for i, datum_id in enumerate(doc['datum_id']):
             new_datum_id = f'{new_res_uid}/{i}'
@@ -38,7 +42,15 @@ class Migration(event_model.DocumentRouter):
             self.new_datum_ids[datum_id] = new_datum_id
         self.serializer('datum_page', datum_page_copy)
 
+    def event(self, doc):
+        data = doc['data']
+        if self.image_field in data:
+            datum_id = data[self.image_field]
+            new_datum_id = self.new_datum_ids[datum_id]
+            data[self.timestamp_field] = new_datum_id
+
     def event_page(self, doc):
+        # Mutate doc in place to add a column for timestamps.
         data = doc['data']
         if self.image_field in data:
             for i, datum_id in enumerate(data[self.image_field]):
