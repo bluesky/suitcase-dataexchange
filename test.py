@@ -1,6 +1,7 @@
 from intake import open_catalog
-catalog = open_catalog('/home/dallan/Downloads/repaired-data/fxi.yml')
-run = catalog['fxi'][-1]
+raw_catalog = open_catalog('/home/dallan/Downloads/raw-data/fxi.yml')
+repaired_catalog = open_catalog('/home/dallan/Downloads/repaired-data/fxi.yml')
+run = repaired_catalog['fxi'][-1]
 import suitcase.dataexchange
 print('entering loop', flush=True)
 with suitcase.dataexchange.Serializer('/tmp/test_hdf5') as serializer:
