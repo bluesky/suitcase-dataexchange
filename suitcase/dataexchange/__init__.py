@@ -268,7 +268,7 @@ class Serializer(event_model.DocumentRouter):
         #    self._theta_timestamps,
         #    self._buffered_thetas)
         theta = np.interp(
-            [item + 631151905 for item in self._image_timestamps],
+            [item + 631152000 for item in self._image_timestamps],
             self._theta_timestamps,
             self._buffered_thetas)
 
