@@ -261,12 +261,6 @@ class Serializer(event_model.DocumentRouter):
 
         del self._image_timestamps[-2 * self._chunk_size:]
 
-        import pdb; pdb.set_trace()
-
-        #theta = np.interp(
-        #    self._image_timestamps,
-        #    self._theta_timestamps,
-        #    self._buffered_thetas)
         theta = np.interp(
             [item + 631152000 for item in self._image_timestamps],
             self._theta_timestamps,
