@@ -37,7 +37,8 @@ class Migration(event_model.DocumentRouter):
         datum_page_copy = copy.deepcopy(doc)
         new_res_uid = self.new_res_uids[doc['resource']]
         for i, datum_id in enumerate(doc['datum_id']):
-            new_datum_id = f'{new_res_uid}/{i}'
+            point_number = doc['datum_kwargs']['point_number'][i]
+            new_datum_id = f'{new_res_uid}/{point_number}'
             datum_page_copy['datum_id'][i] = new_datum_id
             self.new_datum_ids[datum_id] = new_datum_id
         datum_page_copy['resource'] = new_res_uid
@@ -67,10 +68,10 @@ if __name__ == '__main__':
     # TODO Strip out local paths, of course.
     from tqdm import tqdm
     from intake import open_catalog
-    catalog = open_catalog('/home/dallan/Downloads/raw-data/fxi.yml')
+    catalog = open_catalog('/home/gbischof/FXI/fxi.yml')
     run = catalog['fxi'][-1]
     import suitcase.msgpack
-    with suitcase.msgpack.Serializer('/home/dallan/Downloads/repaired-data') as serializer:
+    with suitcase.msgpack.Serializer('/home/gbischof/FXI/repaired-data') as serializer:
         migration = Migration('Andor_image', 'Andor_timestamp', serializer)
         for name, doc in tqdm(run.canonical(fill='no')):
             migration(name, doc)
