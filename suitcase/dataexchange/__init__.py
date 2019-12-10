@@ -262,7 +262,8 @@ class Serializer(event_model.DocumentRouter):
         del self._image_timestamps[-2 * self._chunk_size:]
 
         theta = np.interp(
-            [item + 631152000 for item in self._image_timestamps],
+            EPICS_TO_UNIX_OFFSET = 631152000  # 20 years in seconds
+            [item + EPICS_TO_UNIX_OFFSET for item in self._image_timestamps],
             self._theta_timestamps,
             self._buffered_thetas)
 
