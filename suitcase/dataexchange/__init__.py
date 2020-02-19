@@ -254,7 +254,7 @@ class Serializer(event_model.DocumentRouter):
         dataset = self._output_file['/exchange/data']
         white_image = dataset[-self._chunk_size:,:,:]
         white_avg = np.mean(white_image, axis=0, keepdims=True)
-        self._output_file['/exchange/data_dark'][:] = white_avg
+        self._output_file['/exchange/data_white'][:] = white_avg
         # and the junk frame (second to last). It is a junk frame because the
         # motor stopped moving somewhere in the middle.
         dataset.resize((dataset.shape[0] - 2 * self._chunk_size, *dataset.shape[1:]))
