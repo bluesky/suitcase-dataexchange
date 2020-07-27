@@ -15,7 +15,7 @@ __version__ = get_versions()['version']
 del get_versions
 
 
-def export(gen, directory, file_prefix='{uid}', **kwargs):
+def export(gen, directory, file_prefix='{uid}', timestamp_key='timestamps', **kwargs):
     """
     Export a stream of documents to dataexchange.
 
@@ -50,6 +50,10 @@ def export(gen, directory, file_prefix='{uid}', **kwargs):
         descriptive value depends on the application and is therefore left to
         the user.
 
+    timestamp_key: str, optional
+        Defaults to 'timestamps', was previously 'timestamp' referring to the
+        Andor_timestamps key that stores timestamps used to derive angular data.
+
     **kwargs : kwargs
         Keyword arugments to be passed through to the underlying I/O library.
 
@@ -78,7 +82,7 @@ def export(gen, directory, file_prefix='{uid}', **kwargs):
 
     >>> export(gen, '/path/to/my_usb_stick')
     """
-    with Serializer(directory, file_prefix, **kwargs) as serializer:
+    with Serializer(directory, file_prefix, timestamp_key, **kwargs) as serializer:
         for item in gen:
             serializer(*item)
         return serializer.artifacts
@@ -116,6 +120,10 @@ class Serializer(event_model.DocumentRouter):
         descriptive value depends on the application and is therefore left to
         the user.
 
+    timestamp_key: str, optional
+        Defaults to 'timestamps', was previously 'timestamp' referring to the
+        Andor_timestamps key that stores timestamps used to derive angular data.
+
     **kwargs : kwargs
         Keyword arugments to be passed through to the underlying I/O library.
 
@@ -125,9 +133,10 @@ class Serializer(event_model.DocumentRouter):
         dict mapping the 'labels' to lists of file names (or, in general,
         whatever resources are produced by the Manager)
     """
-    def __init__(self, directory, file_prefix='{uid}', **kwargs):
+    def __init__(self, directory, file_prefix='{uid}', timestamp_key='timestamps', **kwargs):
 
         self._file_prefix = file_prefix
+        self._timestamp_key = timestamp_key
         self._kwargs = kwargs
         self._templated_file_prefix = ''  # set when we get a 'start' document
 
@@ -241,7 +250,7 @@ class Serializer(event_model.DocumentRouter):
             for image in doc['data']['Andor_image'][start_from:]:
                 dataset.resize((dataset.shape[0] + self._chunk_size, *dataset.shape[1:]))
                 dataset[-self._chunk_size:,:,:] = image
-            for ts in doc['data']['Andor_timestamp'][start_from:]:
+            for ts in doc['data']['Andor_' + self._timestamp_key][start_from:]:
                 self._image_timestamps.extend(ts)
 
         elif doc['descriptor'] == self._descriptor_uids.get('zps_pi_r_monitor'):
